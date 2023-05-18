@@ -9,6 +9,7 @@ import './styles/main.css'
 import 'uno.css'
 
 import 'vuetify/dist/vuetify.min.css' // 导入Vuetify的CSS样式
+import AppExtra from './components/AppExtra'
 
 console.log(routes, 'routes')
 
@@ -18,5 +19,8 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 })
+
+app.component('AppExtra', AppExtra)
+
 app.use(router).use(vuetify)
 app.mount('#app')

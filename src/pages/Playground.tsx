@@ -5,7 +5,7 @@ const useUserInfoDialog = createDialog(UserInfo)
 
 const Playground = defineComponent({
   setup() {
-    const { show, Dialog, hide } = useUserInfoDialog({
+    const { show, hide } = useUserInfoDialog({
       onOk(value) {
         console.log(value, 'okValue')
       },
@@ -15,7 +15,7 @@ const Playground = defineComponent({
       return (
         <div>
           <button onClick={show}>123123</button>
-          <Dialog />
+          {/* <Dialog /> */}
         </div>
       )
     }
