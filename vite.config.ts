@@ -8,6 +8,7 @@ import Components from 'unplugin-vue-components/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import UnoCSS from 'unocss/vite'
 import VueMacros from 'unplugin-vue-macros/vite'
+import vueJsx from '@vitejs/plugin-vue-jsx'
 
 export default defineConfig({
   resolve: {
@@ -16,6 +17,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    vueJsx(),
     VueMacros({
       defineOptions: false,
       defineModels: false,
@@ -30,7 +32,9 @@ export default defineConfig({
     }),
 
     // https://github.com/hannoeru/vite-plugin-pages
-    Pages(),
+    Pages({
+      extensions: ['vue', 'tsx', 'ts', 'js'],
+    }),
 
     // https://github.com/antfu/unplugin-auto-import
     AutoImport({

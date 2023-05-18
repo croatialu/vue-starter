@@ -20,7 +20,9 @@
       "unplugin-vue-macros/macros-global"
     ],
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": ["src/*"],
+      "vuetify": ["node_modules/vuetify/lib"],
+      "vuetify/components": ["node_modules/vuetify/lib/components"]
     }
   },
   "exclude": ["dist", "node_modules"]

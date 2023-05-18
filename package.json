@@ -3,7 +3,7 @@
   "packageManager": "pnpm@8.5.1",
   "scripts": {
     "build": "vite build",
-    "dev": "vite --port 3333 --open",
+    "dev": "vite --port 5173 --open",
     "lint": "eslint .",
     "typecheck": "vue-tsc --noEmit",
     "preview": "vite preview",
@@ -14,7 +14,8 @@
   "dependencies": {
     "@vueuse/core": "^10.1.2",
     "vue": "^3.3.2",
-    "vue-router": "^4.2.0"
+    "vue-router": "^4.2.0",
+    "vuetify": "^3.2.5"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^0.38.6",
@@ -23,12 +24,14 @@
     "@unocss/eslint-config": "^0.51.13",
     "@unocss/reset": "^0.51.13",
     "@vitejs/plugin-vue": "^4.2.3",
+    "@vitejs/plugin-vue-jsx": "^3.0.1",
     "@vue-macros/volar": "^0.9.8",
     "@vue/test-utils": "^2.3.2",
     "eslint": "8.39.0",
     "jsdom": "^22.0.0",
     "lint-staged": "^13.2.2",
     "pnpm": "^8.5.1",
+    "sass": "^1.62.1",
     "simple-git-hooks": "^2.8.1",
     "taze": "^0.10.1",
     "typescript": "^5.0.4",
