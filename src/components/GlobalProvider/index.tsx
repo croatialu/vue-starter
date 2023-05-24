@@ -1,9 +1,9 @@
 import type { Render } from './context'
-import { useAppExtraProvide } from './context'
+import { useGlobalProvide } from './context'
 
 let renderId = 0
 
-export const AppExtra = defineComponent({
+export const GlobalProvider = defineComponent({
   setup(_, { slots }) {
     const nodes = ref<{ node: JSX.Element; id: number }[]>([])
 
@@ -24,7 +24,7 @@ export const AppExtra = defineComponent({
       }
     }
 
-    useAppExtraProvide({
+    useGlobalProvide({
       render,
     })
 
@@ -37,4 +37,4 @@ export const AppExtra = defineComponent({
   },
 })
 
-export default AppExtra
+export default GlobalProvider

@@ -1,20 +1,35 @@
-import { createDialog } from './../utils/dialog'
-import { UserInfo } from '~/components/UserInfo'
-
-const useUserInfoDialog = createDialog(UserInfo)
+import { useUserInfoDialog } from '~/components/UserInfo'
 
 const Playground = defineComponent({
   setup() {
-    const { show, hide } = useUserInfoDialog({
-      onOk(value) {
-        console.log(value, 'okValue')
-      },
+    const { show: showUserInfo } = useUserInfoDialog()
+
+    const userInfo = ref({
+      userName: '',
+      password: '',
     })
+
+    const handleShowUserInfo = async () => {
+      const result = await showUserInfo({
+        options: {
+          userName: userInfo.value.userName,
+          password: userInfo.value.password,
+        },
+      })
+
+      if (!result.isOk)
+        return
+
+      userInfo.value = result.value!
+    }
 
     return () => {
       return (
         <div>
-          <button onClick={show}>123123</button>
+          <pre class="bg-[#ADADAD]">
+            {JSON.stringify(userInfo.value, null, 2)}
+          </pre>
+          <button onClick={handleShowUserInfo}>Show User Info</button>
           {/* <Dialog /> */}
         </div>
       )

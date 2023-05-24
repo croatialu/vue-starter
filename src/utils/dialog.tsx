@@ -1,90 +1,180 @@
-import type { DefineComponent } from 'vue'
-import { VBtn, VCardActions, VCardTitle, VDialog } from 'vuetify/components'
-import { createContext } from './common'
-import { useAppExtraInject } from '~/components/AppExtra/context'
+import type { VDialog } from 'vuetify/components'
+import { useGlobalInject } from '../components/GlobalProvider/context'
+import type { ValueGetter } from './common'
+import { createContext, getValue } from './common'
+import { Modal } from '~/components/Modal'
 
-const [useDialogProvide, userDialogInject] = createContext<{
+const { useProvide: useDialogProvide, useInject: userDialogInject } = createContext<{
   onOk: (callback: Callback) => void
   cancel: () => void
   isOkLoading: Ref<boolean>
+  action: {
+    ok: () => void
+    cancel: () => void
+    setLoading: (value: boolean) => void
+    expose: (value: unknown) => void
+  }
 }>('createDialog')
 
-type NextCallback = (value: unknown) => void
-type Callback = (next: NextCallback, isOkLoading: Ref<boolean>) => void
+type NextCallback<T> = (value: T) => void
+type Callback<T = unknown> = (next: NextCallback<T>, isOkLoading: Ref<boolean>) => void
 
-export function useDialogOk(callback: Callback) {
+export function useDialogOk<T>(callback: Callback<T>) {
   try {
     const { onOk } = userDialogInject()
 
     onOk(callback)
   }
-  catch {}
+  catch { }
 }
-export {
-  useDialogProvide,
-  userDialogInject,
+
+export function useDialogAction() {
+  try {
+    const { action } = userDialogInject()
+
+    return action
+  }
+  catch (err) {
+    console.error(err, 'useDialogAction')
+    return {
+      ok: () => {},
+      cancel: () => { },
+      setLoading: () => { },
+      expose: () => { },
+    }
+  }
 }
-export function createDialog<T extends DefineComponent<{}, {}, any>>(Comp: T) {
-  return function (props: { title?: string; onOk?: (value: unknown) => void } = {}) {
+
+type DialogOptions = Omit<InstanceType<typeof VDialog>['$props'] & {}, 'modelValue'>
+
+type Resolve<T> = (value: T | PromiseLike<T>) => void
+type Reject = (reason?: any) => void
+
+function createPromise<T>() {
+  let resolve: Resolve<T> = () => { }
+  let reject: Reject = () => { }
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve
+    reject = _reject
+  })
+
+  return { resolve, reject, promise }
+}
+
+export function createDialog<Input, Output = any>(ComponentFactory: (options: Input) => JSX.Element | string | number | null, dialogOptions?: ValueGetter<Partial<DialogOptions>, Input>) {
+  interface ShowDialogOptions<T> {
+    title?: string
+    options?: T
+  }
+
+  return function<DV>() {
+    type DialogValue = DV extends {} ? DV : Output
     const visible = ref(false)
+    type ShowDialogReturnValue = { isOk: true; value: DialogValue | null } | { isOk: false }
+
+    let dialogResolve: Resolve<ShowDialogReturnValue> = () => { }
 
     const isOkLoading = ref(false)
+    let okCb: Callback<DialogValue> | undefined
+
+    const handleOk = () => {
+      if (!okCb) {
+        hide()
+        dialogResolve({ isOk: true, value: null as DialogValue })
+        return
+      }
+
+      okCb((value: DialogValue) => {
+        hide()
+        dialogResolve({
+          isOk: true,
+          value,
+        })
+      }, isOkLoading)
+    }
+
+    const handleCancel = () => {
+      hide()
+      dialogResolve({
+        isOk: false,
+      })
+    }
 
     const Dialog = defineComponent({
-      setup() {
-        let okCb: Callback = () => { }
-        const handleOk = () => {
-          okCb((value) => {
-            props.onOk?.(value)
-            hide()
-          }, isOkLoading)
+      inheritAttrs: false,
+      setup(_, { attrs }) {
+        const { options: compProps = {}, ...otherAttrs } = attrs
+
+        const handleOnOk = (callback: Callback<DialogValue>) => {
+          okCb = callback
         }
 
-        const handleOnOk = (callback: Callback) => {
-          okCb = callback
+        const handleActionExpose = (value: unknown) => {
+          hide()
+          dialogResolve({
+            isOk: true,
+            value: value as DialogValue,
+          })
+        }
+
+        const handleSetLoading = (value: boolean) => {
+          isOkLoading.value = value
         }
 
         useDialogProvide({
           isOkLoading,
-          onOk: handleOnOk,
-          cancel: hide,
+          onOk: handleOnOk as any,
+          cancel: handleCancel,
+          action: {
+            expose: handleActionExpose,
+            ok: handleOk,
+            cancel: handleCancel,
+            setLoading: handleSetLoading,
+          },
         })
+
         return () => {
+          const componentElement = ComponentFactory(compProps as Input)
+          const realDialogOptions = getValue(dialogOptions as any, compProps as any)
           return (
-            <VDialog {...props} contentClass="bg-white p-24px rounded-12px" v-model={visible.value}>
-              <VCardTitle>{ props.title || '标题' }</VCardTitle>
-              <Comp />
-              <VCardActions >
-                <VBtn class="ml-auto" onClick={hide}>取消</VBtn>
-                <VBtn color="primary" loading={isOkLoading.value} variant="elevated" onClick={handleOk}>确认</VBtn>
-              </VCardActions>
-            </VDialog>
+            <Modal
+              {...realDialogOptions}
+              {...otherAttrs}
+              isOkLoading={isOkLoading.value}
+              v-model={visible.value}
+              onCancel={handleCancel}
+              onOk={handleOk}
+              v-slots={{ default: () => componentElement }}
+            />
           )
         }
       },
     })
 
-    const { render } = useAppExtraInject()
+    const { render } = useGlobalInject()
 
-    let clear = () => { }
-
-    function show() {
+    async function show(
+      options: ShowDialogOptions<Input> = {},
+    ) {
       visible.value = true
+      const { resolve, promise } = createPromise<ShowDialogReturnValue>()
+      dialogResolve = resolve
+      const clear = render(<Dialog {...options as any} />)
 
-      clear = render(<Dialog />)
+      const result = await promise
+      setTimeout(() => {
+        clear()
+      }, 500)
+      return result
     }
 
     function hide() {
       visible.value = false
-      setTimeout(() => {
-        clear()
-      }, 500)
     }
 
     return {
       show,
-      hide,
-      // Dialog: ,
+      hide: handleCancel,
     }
   }
 }

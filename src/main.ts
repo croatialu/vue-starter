@@ -9,9 +9,7 @@ import './styles/main.css'
 import 'uno.css'
 
 import 'vuetify/dist/vuetify.min.css' // 导入Vuetify的CSS样式
-import AppExtra from './components/AppExtra'
-
-console.log(routes, 'routes')
+import AppExtra from './components/GlobalProvider'
 
 const vuetify = createVuetify()
 const app = createApp(App)
