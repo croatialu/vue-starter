@@ -4,16 +4,31 @@ import type { ValueGetter } from './common'
 import { createContext, getValue } from './common'
 import { Modal } from '~/components/Modal'
 
+export interface DialogActions<T> {
+  /**
+   * 触发 ok 回调， 会走到 useDialogOk 中
+   */
+  ok: () => void
+  /**
+   * 关闭 dialog
+   */
+  cancel: () => void
+  /**
+   * 设置 ok 按钮 loading 状态
+   */
+  setLoading: (value: boolean) => void
+
+  /**
+   * 对外直接导出数据， 不走 ok 回调
+   * */
+  expose: (value: T) => void
+}
+
 const { useProvide: useDialogProvide, useInject: userDialogInject } = createContext<{
   onOk: (callback: Callback) => void
   cancel: () => void
   isOkLoading: Ref<boolean>
-  action: {
-    ok: () => void
-    cancel: () => void
-    setLoading: (value: boolean) => void
-    expose: (value: unknown) => void
-  }
+  action: DialogActions<unknown>
 }>('createDialog')
 
 type NextCallback<T> = (value: T) => void
@@ -81,6 +96,7 @@ export function createDialog<Input, Output = any>(ComponentFactory: (options: In
       if (!okCb) {
         hide()
         dialogResolve({ isOk: true, value: null as DialogValue })
+        isOkLoading.value = false
         return
       }
 
@@ -90,6 +106,7 @@ export function createDialog<Input, Output = any>(ComponentFactory: (options: In
           isOk: true,
           value,
         })
+        isOkLoading.value = false
       }, isOkLoading)
     }
 
@@ -98,6 +115,7 @@ export function createDialog<Input, Output = any>(ComponentFactory: (options: In
       dialogResolve({
         isOk: false,
       })
+      isOkLoading.value = false
     }
 
     const Dialog = defineComponent({
@@ -111,6 +129,7 @@ export function createDialog<Input, Output = any>(ComponentFactory: (options: In
 
         const handleActionExpose = (value: unknown) => {
           hide()
+          isOkLoading.value = false
           dialogResolve({
             isOk: true,
             value: value as DialogValue,
